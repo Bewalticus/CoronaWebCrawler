@@ -6,6 +6,7 @@
 
 local widget = require( "widget" )
 local composer = require( "composer" )
+local webcrawler = require( "webcrawler" )
  
 -- Listen for segmented control events      
 local function onSegmentPress( event )
@@ -30,3 +31,5 @@ local segmentedControl = widget.newSegmentedControl(
 )
 
 composer.gotoScene( "search" )
+
+webcrawler:crawlNextFromQueue()

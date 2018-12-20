@@ -19,27 +19,38 @@ function DB:addUrlToQueue(url)
             return
         end
     end
+    print("Add URL to queue: " .. url)
     self.connection:exec([[INSERT INTO queue VALUES (NULL, ']] .. url .. [[');]])
-    print(self.connection:last_insert_rowid())
 end
 
 function DB:getStatistics()
     local pagecount = 0
     local queuedcount = 0
+    local keycount = 0
+    local assoccount = 0
     for row in self.connection:nrows([[SELECT count(*) as pagecount FROM page]]) do
         pagecount = row.pagecount
     end
     for row in self.connection:nrows([[SELECT count(*) as queuedcount FROM queue]]) do
         queuedcount = row.queuedcount
     end
-    return pagecount, queuedcount
+    for row in self.connection:nrows([[SELECT count(*) as keycount FROM keyword]]) do
+        keycount = row.keycount
+    end
+    for row in self.connection:nrows([[SELECT count(*) as assoccount FROM association]]) do
+        assoccount = row.assoccount
+    end
+    return pagecount, queuedcount, keycount, assoccount
 end
 
 function DB:moveUrlFromQueueToPage()
-    local firstEntry = 0
+    local firstEntry = -1
     local url
     for row in self.connection:nrows([[SELECT MIN(id) as minimum FROM queue;]]) do
         firstEntry = row.minimum
+    end
+    if ( not firstEntry) then
+        return nil, nil
     end
     for row in self.connection:nrows([[SELECT * FROM queue WHERE id=]]..firstEntry..[[;]]) do
         url = row.url
@@ -64,7 +75,7 @@ function DB:getKeywordId(keyword)
     end
     if (not id) then
         self.connection:exec([[INSERT INTO keyword VALUES (NULL, ']]..keyword..[[');]])
-        id = self.connection.last_insert_rowid()
+        id = self.connection:last_insert_rowid()
     end
     return id
 end
@@ -75,6 +86,13 @@ end
 
 function DB:addAssociation(pageid, keywordid)
     self.connection:exec([[INSERT INTO association VALUES (NULL, ]]..pageid..[[, ]]..keywordid..[[);]])
+end
+
+function DB:clearAll()
+    self.connection:exec([[DELETE FROM page;]])
+    self.connection:exec([[DELETE FROM queue;]])
+    self.connection:exec([[DELETE FROM keyword;]])
+    self.connection:exec([[DELETE FROM association;]])
 end
 
 local function onSystemEvent( event )

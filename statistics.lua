@@ -9,7 +9,13 @@ local scene = composer.newScene()
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
  
+local function handleClearButtonEvent( event )
  
+    if ( "ended" == event.phase ) then
+        orm:clearAll()
+        scene:updateInfo()
+    end
+end
  
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
@@ -24,10 +30,25 @@ function scene:create( event )
     local title = display.newText( "Statistics", display.contentCenterX, 0, native.systemFont, 32 )
     self.pageText = display.newText( "Indexed Pages: ", display.contentCenterX, 50, native.systemFont, 24)
     self.queueText = display.newText( "Queued Pages: ", display.contentCenterX, 75, native.systemFont, 24)
+    self.keyText = display.newText( "Keywords: ", display.contentCenterX, 100, native.systemFont, 24)
+    self.assocText = display.newText( "Associations: ", display.contentCenterX, 125, native.systemFont, 24)
+    local button = widget.newButton(
+        {
+            x = display.contentCenterX,
+            y = display.viewableContentHeight - 50,
+            id = "clear",
+            label = "Clear All",
+            onEvent = handleClearButtonEvent
+        }
+    )
+
 
     sceneGroup:insert(title)
     sceneGroup:insert(self.pageText)
     sceneGroup:insert(self.queueText)
+    sceneGroup:insert(self.keyText)
+    sceneGroup:insert(self.assocText)
+    sceneGroup:insert(button)
 end
  
  
@@ -42,12 +63,17 @@ function scene:show( event )
  
     elseif ( phase == "did" ) then
         -- Code here runs when the scene is entirely on screen
-        local pagecount, queuedcount = orm:getStatistics()
-        self.pageText.text = "Indexed Pages: " .. pagecount
-        self.queueText.text = "Queued Pages: " .. queuedcount
+        self:updateInfo()
     end
 end
- 
+
+function scene:updateInfo()
+    local pagecount, queuedcount, keycount, assoccount = orm:getStatistics()
+    self.pageText.text = "Indexed Pages: " .. pagecount
+    self.queueText.text = "Queued Pages: " .. queuedcount
+    self.keyText.text = "Keys: " .. keycount
+    self.assocText.text = "Associations: " .. assoccount
+end
  
 -- hide()
 function scene:hide( event )
